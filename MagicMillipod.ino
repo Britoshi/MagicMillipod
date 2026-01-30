@@ -1,9 +1,12 @@
-void setup() {
-  // put your setup code here, to run once:
+#include "Time.hpp"
+#define Time TimeManager::Instance() 
 
+void setup()
+{
+  
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
-
+void loop()
+{
+  Time.Update(millis());
 }
