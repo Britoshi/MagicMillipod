@@ -1,4 +1,5 @@
 #include "State.hpp"
+#include "StateMachine.hpp"  
 
 bool State::SwitchState(State *state)
 {
@@ -33,9 +34,8 @@ void State::Enter()
 }
 
 void State::Exit()
-{
-    // No need to do exit stuff if it never even initialized.
-    Exit();
+{ 
+    OnStateExit();
 
     if (subState != nullptr)
         subState->Exit();

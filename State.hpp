@@ -1,6 +1,6 @@
-#pragma once
+#pragma once 
 
-#include "StateMachine.hpp"
+class StateMachine; // forward declare — remove the #include "StateMachine.hpp"
 
 class State
 {
@@ -36,4 +36,4 @@ public:
     void Enter();
     void Exit();
     void Update();
-};
+}; 

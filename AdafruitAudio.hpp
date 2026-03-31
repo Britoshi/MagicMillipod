@@ -1,34 +1,38 @@
 #ifndef ADAFRUIT_AUDIO
 #define ADAFRUIT_AUDIO
+
 #include <stdint.h>
+#include <SoftwareSerial.h>
+#include <Adafruit_Soundboard.h>
 
 class AdafruitAudio {
 public:
     AdafruitAudio();
     ~AdafruitAudio();
 
-    // Initialization
-    bool Begin(uint8_t resetPin);
+    bool Begin(uint8_t rxPin, uint8_t txPin, uint8_t resetPin, int8_t busyPin = -1);
     void Reset();
 
-    // Playback control
     void Play(uint8_t trackNumber);
     void Stop();
     void Pause();
     void Resume();
 
-    // Volume control
-    void SetVolume(uint8_t volume);
+    void    SetVolume(uint8_t volume); // 0–10
     uint8_t GetVolume() const;
 
-    // Status queries
-    bool IsPlaying() const;
+    bool    IsPlaying() const;
     uint8_t GetCurrentTrack() const;
 
 private:
-    uint8_t resetPin_;
-    uint8_t currentTrack_;
-    bool isInitialized_;
+    SoftwareSerial*      _ss;
+    Adafruit_Soundboard* _sfx;
+
+    int8_t  _busyPin;
+    uint8_t _currentTrack;
+    uint8_t _volume;
+    bool    _isPlaying;
+    bool    _isInitialized;
 };
 
-#endif 
+#endif

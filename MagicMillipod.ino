@@ -1,43 +1,36 @@
 #include "Time.hpp"
 #define Time TimeManager::Instance()
 #include "pico/multicore.h"
-#include "Adafruit_Soundboard.h"
+#include "AdafruitAudio.hpp"
+#include "StateMachine.hpp"
 
-#define SFX_RX_PIN 0
-#define SFX_TX_PIN 1
-#define SFX_RST 2
-#define SFX_BUSY 3
+#define SFX_RX_PIN  0
+#define SFX_TX_PIN  1
+#define SFX_RST     2
+#define SFX_BUSY    3
 
-// HardwareSerial Serial1(1);
-Adafruit_Soundboard sfx = Adafruit_Soundboard(&Serial1, NULL, SFX_RST);
+AdafruitAudio audio;
+StateMachine stateMachine;
 
 void SetupAudio()
 {
-  Serial1.begin(9600);
+    if (!audio.Begin(SFX_RX_PIN, SFX_TX_PIN, SFX_RST, SFX_BUSY))
+    {
+        Serial.println("Soundboard not found — check wiring");
+        while (1);
+    }
 
-  if (!sfx.reset())
-  {
-    Serial.println("Sound board not found");
-    while (1)
-      ;
-  }
-
-  Serial.println("Soundboard ready");
-}
-
-void PlayTrack(uint8_t trackNumber)
-{ 
-  sfx.playTrack(trackNumber);
+    audio.SetVolume(7);
+    Serial.println("Soundboard ready");
 }
 
 void setup()
 {
-  Serial.begin(115200);
-  SetupAudio();
+    Serial.begin(115200);
+    SetupAudio();
 }
 
 void loop()
 {
-  Time.Update(millis());
-  
+    Time.Update(millis());
 }

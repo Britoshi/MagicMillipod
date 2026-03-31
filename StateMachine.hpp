@@ -1,12 +1,19 @@
-#include "State.hpp"
+#pragma once
+#include "StateFactory.hpp"
+
+class State;
 
 class StateMachine
 {
+    friend class State;
+public:
+    State *currentState = nullptr;
 
-public: 
-    State *currentState;
     StateMachine();
     ~StateMachine();
 
     void Update();
-}
+
+private:
+    StateFactory factory;
+};
