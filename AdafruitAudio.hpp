@@ -1,38 +1,38 @@
 #ifndef ADAFRUIT_AUDIO
 #define ADAFRUIT_AUDIO
 
-#include <stdint.h>
-#include <SoftwareSerial.h>
-#include <Adafruit_Soundboard.h>
+#include <Arduino.h>
 
 class AdafruitAudio {
 public:
-    AdafruitAudio();
-    ~AdafruitAudio();
+    static AdafruitAudio &Instance()
+    {
+        static AdafruitAudio instance;
+        return instance;
+    }
 
-    bool Begin(uint8_t rxPin, uint8_t txPin, uint8_t resetPin, int8_t busyPin = -1);
-    void Reset();
+    AdafruitAudio(const AdafruitAudio &) = delete;
+    AdafruitAudio &operator=(const AdafruitAudio &) = delete;
 
-    void Play(uint8_t trackNumber);
-    void Stop();
-    void Pause();
-    void Resume();
+    void Begin(uint8_t triggerPin)
+    {
+        _triggerPin = triggerPin;
+        pinMode(_triggerPin, OUTPUT);
+        digitalWrite(_triggerPin, HIGH);
+        Serial.print("[Audio] Trigger pin: "); Serial.println(_triggerPin);
+    }
 
-    void    SetVolume(uint8_t volume); // 0–10
-    uint8_t GetVolume() const;
-
-    bool    IsPlaying() const;
-    uint8_t GetCurrentTrack() const;
+    void Play()
+    {
+        Serial.println("[Audio] Triggering...");
+        digitalWrite(_triggerPin, LOW);
+        delay(200);
+        digitalWrite(_triggerPin, HIGH);
+    }
 
 private:
-    SoftwareSerial*      _ss;
-    Adafruit_Soundboard* _sfx;
-
-    int8_t  _busyPin;
-    uint8_t _currentTrack;
-    uint8_t _volume;
-    bool    _isPlaying;
-    bool    _isInitialized;
+    AdafruitAudio() = default;
+    uint8_t _triggerPin = 0;
 };
 
 #endif

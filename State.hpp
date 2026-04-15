@@ -1,13 +1,14 @@
-#pragma once 
+#pragma once
+#include <Arduino.h>
 
-class StateMachine; // forward declare — remove the #include "StateMachine.hpp"
+class StateMachine;
 
 class State
 {
 protected:
-    StateMachine *context = nullptr; // non-owning
-    State *superState = nullptr;     // non-owning
-    State *subState = nullptr;       // non-owning
+    StateMachine *context = nullptr; 
+    State *superState = nullptr;     
+    State *subState = nullptr;       
 
 protected:
     bool SwitchState(State *state);
@@ -16,7 +17,7 @@ protected:
 
     virtual void OnStateEnter() {}
     virtual void OnStateExit() {}
-    virtual void OnStateUpdate() {}
+    virtual void OnStateUpdate() {} 
 
     virtual bool CheckSwitchState() = 0;
     virtual void InitializeSubState() = 0;
@@ -27,13 +28,11 @@ public:
     {
         SetSuperState(superState);
     }
-
-    virtual ~State() = default;
-
+    
     State(const State &) = delete;
     State &operator=(const State &) = delete;
 
     void Enter();
     void Exit();
-    void Update();
+    void Update(); 
 }; 

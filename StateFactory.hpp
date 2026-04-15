@@ -10,5 +10,5 @@ public:
     StandbyState *GetStandbyState() { return &standbyState; }
 
 private:
-    StandbyState standbyState; // owned — lives and dies with the factory
+    StandbyState standbyState;  
 };

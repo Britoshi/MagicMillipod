@@ -2,35 +2,26 @@
 #define Time TimeManager::Instance()
 #include "pico/multicore.h"
 #include "AdafruitAudio.hpp"
+#include "DistanceSensorManager.hpp"
 #include "StateMachine.hpp"
 
-#define SFX_RX_PIN  0
-#define SFX_TX_PIN  1
-#define SFX_RST     2
-#define SFX_BUSY    3
+#define SFX_TRIGGER  5
 
-AdafruitAudio audio;
-StateMachine stateMachine;
-
-void SetupAudio()
-{
-    if (!audio.Begin(SFX_RX_PIN, SFX_TX_PIN, SFX_RST, SFX_BUSY))
-    {
-        Serial.println("Soundboard not found — check wiring");
-        while (1);
-    }
-
-    audio.SetVolume(7);
-    Serial.println("Soundboard ready");
-}
+StateMachine *stateMachine = nullptr;
 
 void setup()
 {
     Serial.begin(115200);
-    SetupAudio();
+    pinMode(LED_BUILTIN, OUTPUT);
+    AdafruitAudio::Instance().Begin(SFX_TRIGGER);
+    DistanceSensorManager::Instance().Start();
+    stateMachine = new StateMachine();
+    delay(3000);
 }
 
 void loop()
 {
     Time.Update(millis());
+    DistanceSensorManager::Instance().Update();
+    stateMachine->Update();
 }
