@@ -23,9 +23,15 @@ public:
 
     void Start();
     void Update();
+    float GetAverageDistance() const;
 
 private:
     DistanceSensorManager() = default;
+
+    static const int BUFFER_SIZE = 4; // 1 second at 4 Hz
+    float _buffer[BUFFER_SIZE] = {};
+    int _bufferIndex = 0;
+    int _bufferCount = 0;
 };
 
 #endif

@@ -14,6 +14,6 @@ public:
 
     void Update();
 
-private:
+public:
     StateFactory factory;
 };

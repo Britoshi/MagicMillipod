@@ -31,4 +31,16 @@ void DistanceSensorManager::Tick()
     digitalWrite(TRIG_PIN, LOW);
     duration = pulseIn(ECHO_PIN, HIGH);
     distance = (duration * 0.0343f) / 2.0f;
+
+    _buffer[_bufferIndex] = distance;
+    _bufferIndex = (_bufferIndex + 1) % BUFFER_SIZE;
+    if (_bufferCount < BUFFER_SIZE) _bufferCount++;
+}
+
+float DistanceSensorManager::GetAverageDistance() const
+{
+    if (_bufferCount == 0) return 0.0f;
+    float sum = 0.0f;
+    for (int i = 0; i < _bufferCount; i++) sum += _buffer[i];
+    return sum / _bufferCount;
 }
