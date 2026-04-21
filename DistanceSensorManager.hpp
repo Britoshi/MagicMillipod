@@ -4,7 +4,7 @@
 #include "Time.hpp"
 
 class DistanceSensorManager {
-    const double TICK_RATE = 4;
+    const double TICK_RATE = 20;
     void Tick();
 
 public:

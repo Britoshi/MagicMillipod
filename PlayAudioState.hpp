@@ -18,6 +18,7 @@ protected:
     void InitializeSubState() override;
 
 private:
-    static constexpr double PLAY_DURATION = 10.0;
+    static constexpr double PLAY_DURATION = 60.0*8.0;
     double _enterTime = 0.0;
+    float _lastDistance = -1.0f;
 };

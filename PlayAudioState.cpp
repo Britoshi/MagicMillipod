@@ -2,6 +2,8 @@
 #include "StateMachine.hpp"
 #include "AdafruitAudio.hpp"
 #include "LEDController.hpp"
+#include "UVLightController.hpp"
+#include "DistanceSensorManager.hpp"
 #include "Time.hpp"
 
 void PlayAudioState::OnStateEnter()
@@ -18,7 +20,19 @@ void PlayAudioState::OnStateExit()
     Serial.println("[PlayAudio] Exited");
 }
 
-void PlayAudioState::OnStateUpdate() {}
+void PlayAudioState::OnStateUpdate()
+{
+    float distance = DistanceSensorManager::Instance().distance;
+    if (distance == _lastDistance) return;
+    _lastDistance = distance;
+
+    float ratio = distance / 200.0f;
+    Serial.print("[PlayAudio] Distance: ");
+    Serial.print(distance);
+    Serial.print(" cm | Ratio: ");
+    Serial.println(ratio);
+    UVLight.SetBrightness(ratio);
+}
 
 bool PlayAudioState::CheckSwitchState()
 {

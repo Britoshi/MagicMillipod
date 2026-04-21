@@ -1,6 +1,7 @@
 #include "Time.hpp"
 #define Time TimeManager::Instance()
 #include "LEDController.hpp"
+#include "UVLightController.hpp"
 #include "pico/multicore.h"
 #include "AdafruitAudio.hpp"
 #include "DistanceSensorManager.hpp"
@@ -19,6 +20,7 @@ void setup()
     Serial.begin(115200);
     pinMode(LED_BUILTIN, OUTPUT);
     LED.Begin();
+    UVLight.Begin();
     AdafruitAudio::Instance().Begin(SFX_TRIGGER, SFX_RESET);
     DistanceSensorManager::Instance().Start();
     stateMachine = new StateMachine();
