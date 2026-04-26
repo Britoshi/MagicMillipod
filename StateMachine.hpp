@@ -13,6 +13,7 @@ public:
     ~StateMachine();
 
     void Update();
+    void ResetToIdle();
 
 public:
     StateFactory factory;

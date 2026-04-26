@@ -1,16 +1,17 @@
 #pragma once
-#include "StandbyState.hpp"
-#include "PlayAudioState.hpp"
+#include "IdleState.hpp"
+#include "IntroductionState.hpp"
+#include "PresentationState.hpp"
 
 class StateFactory
 {
 public:
     explicit StateFactory(StateMachine *context)
-        : standbyState(context),
-          playAudioState(context) {}
+        : idleState(context),
+          introductionState(context),
+          presentationState(context) {}
 
-    StandbyState *GetStandbyState() { return &standbyState; }
-
-    StandbyState  standbyState;
-    PlayAudioState playAudioState;
+    IdleState         idleState;
+    IntroductionState introductionState;
+    PresentationState presentationState;
 };

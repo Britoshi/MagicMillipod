@@ -14,21 +14,35 @@ public:
     AdafruitAudio(const AdafruitAudio &) = delete;
     AdafruitAudio &operator=(const AdafruitAudio &) = delete;
 
-    void Begin(uint8_t triggerPin, uint8_t resetPin)
+    void Begin(uint8_t triggerPin0, uint8_t triggerPin1, uint8_t resetPin)
     {
-        _triggerPin = triggerPin;
-        pinMode(_triggerPin, OUTPUT);
-        digitalWrite(_triggerPin, HIGH);
+        _triggerPins[0] = triggerPin0;
+        _triggerPins[1] = triggerPin1;
+        for (int i = 0; i < 2; i++)
+        {
+            pinMode(_triggerPins[i], OUTPUT);
+            digitalWrite(_triggerPins[i], HIGH);
+        }
 
         _resetPin = resetPin;
         pinMode(_resetPin, OUTPUT);
         digitalWrite(_resetPin, LOW);
         delay(10);
         digitalWrite(_resetPin, HIGH);
-        delay(1000); // wait for board to finish booting
+        delay(1000);
 
-        Serial.print("[Audio] Trigger pin: "); Serial.println(_triggerPin);
-        Serial.print("[Audio] Reset pin: ");   Serial.println(_resetPin);
+        Serial.print("[Audio] Trigger pins: ");
+        Serial.print(_triggerPins[0]); Serial.print(", "); Serial.println(_triggerPins[1]);
+        Serial.print("[Audio] Reset pin: "); Serial.println(_resetPin);
+    }
+
+    void PlayTrack(uint8_t index)
+    {
+        if (index > 1) return;
+        Serial.print("[Audio] Playing track "); Serial.println(index);
+        digitalWrite(_triggerPins[index], LOW);
+        delay(200);
+        digitalWrite(_triggerPins[index], HIGH);
     }
 
     void Reset()
@@ -37,21 +51,13 @@ public:
         digitalWrite(_resetPin, LOW);
         delay(10);
         digitalWrite(_resetPin, HIGH);
-        delay(1000);  // wait for board to reinitialize
-    }
-
-    void Play()
-    {
-        Serial.println("[Audio] Triggering...");
-        digitalWrite(_triggerPin, LOW);
-        delay(200);
-        digitalWrite(_triggerPin, HIGH);
+        delay(1000);
     }
 
 private:
     AdafruitAudio() = default;
-    uint8_t _triggerPin = 0;
-    uint8_t _resetPin   = 0;
+    uint8_t _triggerPins[2] = { 0, 0 };
+    uint8_t _resetPin = 0;
 };
 
 #endif

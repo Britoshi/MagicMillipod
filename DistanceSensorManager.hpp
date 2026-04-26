@@ -28,7 +28,7 @@ public:
 private:
     DistanceSensorManager() = default;
 
-    static const int BUFFER_SIZE = 4; // 1 second at 4 Hz
+    static const int BUFFER_SIZE = 4;
     float _buffer[BUFFER_SIZE] = {};
     int _bufferIndex = 0;
     int _bufferCount = 0;

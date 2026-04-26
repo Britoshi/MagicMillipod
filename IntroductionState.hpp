@@ -1,13 +1,13 @@
 #pragma once
 #include "State.hpp"
 
-class PlayAudioState : public State
+class IntroductionState : public State
 {
 public:
-    explicit PlayAudioState(StateMachine *context, State *superState = nullptr)
+    explicit IntroductionState(StateMachine *context, State *superState = nullptr)
         : State(context, superState) {}
 
-    ~PlayAudioState() = default;
+    ~IntroductionState() = default;
 
 protected:
     void OnStateEnter() override;
@@ -18,7 +18,8 @@ protected:
     void InitializeSubState() override;
 
 private:
-    static constexpr double PLAY_DURATION = 60.0*8.0;
+    static constexpr double DURATION      = 51.0;
+    static constexpr double FADE_DURATION = 10.0;
+    static constexpr double FADE_OFFSET   = 5.0;
     double _enterTime = 0.0;
-    float _lastDistance = -1.0f;
 };
