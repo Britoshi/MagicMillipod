@@ -3,6 +3,7 @@
 
 #define NEOPIXEL_PIN    18
 #define NEOPIXEL2_PIN   19
+#define NEOPIXEL3_PIN   16
 #define NEOPIXEL_COUNT  7
 #define NeoPixels NeoPixelController::Instance()
 
@@ -19,16 +20,15 @@ public:
 
     void Begin()
     {
-        _ring1.begin();
-        _ring1.setBrightness(255);
-        _ring2.begin();
-        _ring2.setBrightness(255);
+        _ring1.begin(); _ring1.setBrightness(255);
+        _ring2.begin(); _ring2.setBrightness(255);
+        _ring3.begin(); _ring3.setBrightness(255);
         delay(200);
         _ring1.clear(); _ring1.show();
         _ring2.clear(); _ring2.show();
+        _ring3.clear(); _ring3.show();
         delay(10);
-        _ring1.show();
-        _ring2.show();
+        _ring1.show(); _ring2.show(); _ring3.show();
         delay(200);
         Serial.println("[NeoPixel] Ready");
     }
@@ -75,14 +75,29 @@ public:
         _ring2.show();
     }
 
+    void Ring3SetAll(uint8_t r, uint8_t g, uint8_t b)
+    {
+        for (int i = 0; i < NEOPIXEL_COUNT; i++)
+            _ring3.setPixelColor(i, _ring3.Color(r, g, b));
+        _ring3.show();
+    }
+
+    void Ring3Off()
+    {
+        _ring3.clear();
+        _ring3.show();
+    }
+
 private:
     NeoPixelController()
         : _ring1(NEOPIXEL_COUNT, NEOPIXEL_PIN,  NEO_GRB + NEO_KHZ800)
         , _ring2(NEOPIXEL_COUNT, NEOPIXEL2_PIN, NEO_GRB + NEO_KHZ800)
+        , _ring3(NEOPIXEL_COUNT, NEOPIXEL3_PIN, NEO_GRB + NEO_KHZ800)
     {}
 
     Adafruit_NeoPixel _ring1;
     Adafruit_NeoPixel _ring2;
+    Adafruit_NeoPixel _ring3;
 
     uint32_t _rainbowTimer = 0;
     uint8_t  _rainbowIndex = 0;
