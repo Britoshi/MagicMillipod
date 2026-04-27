@@ -24,14 +24,21 @@ public:
     void Start();
     void Update();
     float GetAverageDistance() const;
+    float GetLongAverageDistance() const;
 
 private:
     DistanceSensorManager() = default;
 
-    static const int BUFFER_SIZE = 4;
-    float _buffer[BUFFER_SIZE] = {};
-    int _bufferIndex = 0;
-    int _bufferCount = 0;
+    static const int BUFFER_SIZE      = 4;
+    static const int LONG_BUFFER_SIZE = 60; // 3s at 20Hz
+
+    float _buffer[BUFFER_SIZE]           = {};
+    int   _bufferIndex                   = 0;
+    int   _bufferCount                   = 0;
+
+    float _longBuffer[LONG_BUFFER_SIZE]  = {};
+    int   _longBufferIndex               = 0;
+    int   _longBufferCount               = 0;
 };
 
 #endif

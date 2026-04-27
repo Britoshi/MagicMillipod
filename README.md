@@ -1,40 +1,61 @@
 # MagicMillipod
 
-An interactive installation built on a Raspberry Pi Pico (RP2040). A distance sensor detects visitors and drives a timed sequence of audio, UV lighting, and LED effects across three states.
+An interactive proximity-triggered exhibit controller built on a Raspberry Pi Pico (RP2040). A hand sensor triggers a timed audio/visual presentation sequence. Room-exit detection — via a calibrated distance sensor — resets the system automatically when a visitor leaves.
 
 ---
 
 ## Project Overview
 
-MagicMillipod is a proximity-triggered exhibit controller. When a visitor approaches, it transitions through an introduction and presentation sequence with synchronized audio, UV light ramp-up, and NeoPixel ring effects. It returns to idle automatically after the presentation ends, or immediately via a physical reset button.
+MagicMillipod is a museum exhibit controller. A visitor waves their hand in front of the sensor to start the show. The system plays through an introduction and a full presentation with synchronized audio, UV lighting, and NeoPixel effects. If the visitor leaves mid-presentation, the system detects this and resets to idle. After a full presentation, it waits for the visitor to leave before resetting.
+
+**Key features:**
+- Proximity-triggered state machine (no buttons needed for visitors)
+- Calibrated room-exit detection using a rolling 3-second distance average
+- UV light ramp with PWM brightness control
+- Three NeoPixel rings with per-state effects
+- Staff calibration and reset via a single physical button
+- Simple Mode (DIP switch) for venues where calibration is impractical
 
 ---
 
 ## System Architecture
 
-The firmware is structured around a **finite state machine** running on the Arduino framework for RP2040. All hardware subsystems are managed as **singletons** : initialized once in `setup()` and accessed globally via `Instance()`.
+The firmware runs on the Arduino framework for RP2040. All hardware subsystems are **singletons** initialized once in `setup()` and accessed globally via `::Instance()`. A **finite state machine** drives all behavior — every state is responsible for its own enter/exit logic, per-frame update, and transition conditions.
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Main Loop                        │
-│  TimeManager → DistanceSensorManager → StateMachine │
-└─────────────────────────────────────────────────────┘
-                          │
-              ┌───────────▼───────────┐
-              │      StateMachine     │
-              │  currentState->Update()│
-              └───────────────────────┘
-                          │
-         ┌────────────────┼────────────────┐
-         ▼                ▼                ▼
-    IdleState     IntroductionState  PresentationState
+┌──────────────────────────────────────────────────────────┐
+│                        Main Loop                         │
+│   TimeManager → DistanceSensorManager → StateMachine     │
+└──────────────────────────────────────────────────────────┘
+                            │
+                ┌───────────▼───────────┐
+                │      StateMachine     │
+                │  currentState->Update()│
+                └───────────────────────┘
+                            │
+       ┌──────────┬──────────┼───────────┬──────────────┐
+       ▼          ▼          ▼           ▼              ▼
+   IdleState  Introduction Presentation ExitRoom  Calibration
 ```
 
 **State transitions:**
 ```
-[Idle] ──(sensor < 30cm)──► [Introduction] ──(2 min)──► [Presentation] ──(3 min)──► [Idle]
+                    ┌──── person left (3s avg) ────┐
+                    │                              ▼
+[Idle] ──(hand < 30cm)──► [Introduction] ──(51s)──► [Presentation]
+                                │                        │
+                    person left │              person left│
+                    (3s avg)    │              (3s avg)   │
+                                ▼                        │
+                             [Idle]          ◄───(3min)──┘
+                                                  │
+                                            [ExitRoom]
+                                     (10s AND person gone)
+                                                  │
+                                               [Idle]
 
-Reset button pressed from any state ──► [Idle]
+Button short press (any state) ──► [Calibration] ──(10s)──► [Idle]
+Button long press  (any state) ──► [Idle]
 ```
 
 ---
@@ -44,12 +65,14 @@ Reset button pressed from any state ──► [Idle]
 | Component | Description |
 |---|---|
 | Raspberry Pi Pico (RP2040) | Microcontroller |
-| HC-SR04 | Ultrasonic distance sensor |
-| Adafruit Sound FX Mini | Audio board, GPIO trigger mode |
-| WS2812B ring x2 | NeoPixel LED rings (7 LEDs each) |
-| UV light + N-channel MOSFET | UV LED strip switched via PWM (RFP30N06LE) |
-| Momentary push button | Hardware reset to idle |
-| Sensor indicator LED | On while in idle state |
+| HC-SR04 | Ultrasonic distance sensor (hand trigger + room exit detection) |
+| Adafruit Audio FX Sound Board (16MB) | Two-track audio, GPIO trigger mode |
+| TPA3116D2 2×50W Amplifier | Amplifies audio signal to drive speaker |
+| Dayton Audio PC105-4 4" Speaker | Full-range audio output |
+| NeoPixel Ring ×3 (7 LED each) | Front ring, back ring, sensor box indicator |
+| UV light + N-channel MOSFET | UV LED switched via PWM |
+| Momentary push button | Staff reset / calibration trigger |
+| DIP switch ×4 | Feature configuration (Switch 0 = Simple Mode) |
 
 ### Pin Map
 
@@ -58,68 +81,88 @@ Reset button pressed from any state ──► [Idle]
 | GP2 | SFX Trigger 1 |
 | GP4 | SFX Trigger 0 |
 | GP5 | SFX Reset |
+| GP6 | DIP Switch 0 (Simple Mode) |
+| GP7 | DIP Switch 1 |
+| GP8 | DIP Switch 2 |
+| GP9 | DIP Switch 3 |
 | GP12 | HC-SR04 TRIG |
 | GP13 | HC-SR04 ECHO |
-| GP15 | Reset button (active LOW, internal pull-up) |
-| GP16 | Sensor indicator LED |
+| GP15 | Reset / Calibration button (active LOW, internal pull-up) |
+| GP16 | NeoPixel Ring 3 — sensor box indicator |
 | GP17 | UV light PWM (N-channel MOSFET gate) |
-| GP18 | NeoPixel Ring 1 data |
-| GP19 | NeoPixel Ring 2 data |
+| GP18 | NeoPixel Ring 1 — front |
+| GP19 | NeoPixel Ring 2 — back |
 
 ---
 
 ## Key Components
 
 ### `StateMachine` / `State` / `StateFactory`
-The core state machine. `State` is an abstract base class with `OnStateEnter`, `OnStateUpdate`, `OnStateExit`, and `CheckSwitchState`. `StateFactory` owns all concrete state instances. `StateMachine` holds the current state and calls `Update()` each loop. `ResetToIdle()` forces an immediate transition to idle from anywhere.
+The core FSM. `State` is an abstract base with `OnStateEnter`, `OnStateUpdate`, `OnStateExit`, `CheckSwitchState`, and `InitializeSubState`. `StateFactory` owns all concrete state instances. `StateMachine` holds the active state pointer and calls `Update()` each loop. `ResetToIdle()` and `EnterCalibration()` force transitions from anywhere.
 
 ### `IdleState`
-Waits for a visitor. Ring 1 is blue, Ring 2 cycles rainbow. Includes suppression logic: if the sensor is already triggered on entry, it waits for 5 continuous seconds of clear readings before arming detection (prevents stuck-trigger false starts).
+Waits for a hand within 30 cm. Ring 1 solid blue, Ring 2 rainbow. Transitions to Introduction on trigger. The 30 cm threshold is fixed and independent of calibration.
 
 ### `IntroductionState`
-Plays audio track 0, Ring 1 red. Ring 2 rainbow fades out over the last 15 seconds. UV stays off. Runs for ~51 seconds then transitions to Presentation.
+Plays audio track 0. Ring 1 red, Ring 2 rainbow fading out over the last 10 seconds. Runs 51 seconds then transitions to Presentation. Resets to Idle early if the 3-second average distance indicates the visitor has left.
 
 ### `PresentationState`
-Plays audio track 1, Ring 1 red, Ring 2 off. UV ramps up from 0 to full over ~10 seconds, then fades back out starting at the 1:20 mark. Runs for 3 minutes then returns to Idle.
+Plays audio track 1. Ring 1 red, Ring 2 off. UV ramps from 0 to full over the first 80 seconds, then fades back to 0 for the remainder of its 3-minute duration. Transitions to ExitRoom on completion. Resets to Idle early if the 3-second average distance indicates the visitor has left.
+
+### `ExitRoomState`
+Waits for **both** 10 seconds to elapse **and** the sensor to confirm the visitor has left. Uses `CalibrationData` in normal mode, or a fixed 50 cm threshold in Simple Mode. Transitions to Idle when both conditions are met.
+
+### `CalibrationState`
+Samples the distance sensor for 10 seconds with the room empty. Computes the average (door distance) and half the spread (error range), then stores both to `CalibrationData`. All rings yellow during calibration. Returns to Idle on completion.
+
+### `CalibrationData`
+Singleton storing `doorDistance`, `errorRange`, and `isCalibrated`. Provides `IsPersonPresent(dist)` and `HasPersonLeft(dist)`. If not yet calibrated, falls back to a 30 cm hardcoded threshold. The 1.5× error multiplier provides a grace margin around the calibrated door distance.
 
 ### `DistanceSensorManager`
-Polls the HC-SR04 at 20 Hz. Maintains a rolling 4-sample average. Exposes `distance` (latest reading) and `GetAverageDistance()`.
+Polls HC-SR04 at 20 Hz. Maintains two rolling averages:
+- `GetAverageDistance()` — 4-sample (~200ms), used by IdleState for fast hand detection
+- `GetLongAverageDistance()` — 60-sample (3s), used by Introduction/Presentation/ExitRoom for stable exit detection
 
 ### `NeoPixelController`
-Singleton wrapping two `Adafruit_NeoPixel` instances. `SetAll(r,g,b)` controls Ring 1. `Ring2Rainbow(brightness)` drives a time-based non-blocking rainbow on Ring 2 with optional brightness scale (0.0–1.0 for fade effects). `Ring2Off()` clears Ring 2.
+Wraps three `Adafruit_NeoPixel` instances. Ring 1 (front, GP18) and Ring 3 (sensor box, GP16) are controlled with `SetAll` / `Off`. Ring 2 (back, GP19) has `Ring2Rainbow(brightness)` for a non-blocking time-based rainbow with fade support, and `Ring2Off()`.
 
 ### `UVLightController`
-PWM-based brightness control via an N-channel MOSFET. `SetBrightness(float)` takes 0.0–1.0. PWM frequency is 1 kHz.
+PWM brightness control via N-channel MOSFET. `SetBrightness(float)` accepts 0.0–1.0. PWM at 1 kHz.
 
 ### `AdafruitAudio`
-Controls the Adafruit Sound FX Mini in GPIO trigger mode. Tracks are triggered by pulling a pin LOW for 200ms. `Reset()` pulses the RST pin to stop playback.
+Controls the Adafruit Sound FX board in GPIO trigger mode. `PlayTrack(index)` pulls the corresponding pin LOW for 200ms. `Reset()` pulses RST to halt playback.
+
+### `SwitchController`
+Reads four DIP switches on GP6–9 with internal pull-ups. `IsOn(index)` returns `true` when the switch is closed (connected to GND). Switch 0 enables Simple Mode.
 
 ### `TimeManager`
-Wraps `millis()` into seconds. Provides `GetTime()` (absolute) and `GetDeltaTime()` (frame delta) used by states for timing and smooth ramps.
+Wraps `millis()` into seconds. `GetTime()` returns absolute elapsed time; `GetDeltaTime()` returns per-frame delta. All states use this for timing and smooth value ramps.
 
 ---
 
 ## Getting Started
 
 ### Dependencies
-- [Arduino-Pico core](https://github.com/earlephilhower/arduino-pico) : install via Arduino IDE Board Manager
-- [Adafruit NeoPixel library](https://github.com/adafruit/Adafruit_NeoPixel) : install via Library Manager
+- [Arduino-Pico core](https://github.com/earlephilhower/arduino-pico) — install via Arduino IDE Board Manager
+- [Adafruit NeoPixel library](https://github.com/adafruit/Adafruit_NeoPixel) — install via Library Manager
 
 ### Upload
 1. Open `MagicMillipod.ino` in Arduino IDE
 2. Select board: **Raspberry Pi Pico**
-3. Upload : hold BOOTSEL on first flash if needed
+3. Upload — hold BOOTSEL on first flash if needed
 
 ### Serial Monitor
-Set baud rate to **115200**. All subsystems log prefixed output (`[Idle]`, `[Audio]`, `[Distance]`, `[UV]`, etc.) useful for debugging state transitions and sensor readings.
+Baud rate **115200**. All subsystems emit prefixed logs (`[Idle]`, `[Calibration]`, `[Audio]`, `[Distance]`, `[UV]`, etc.) useful for tracing state transitions and sensor readings.
 
 ---
 
 ## Design Notes
 
-- **All hardware controllers are singletons** : do not instantiate them directly, always use `::Instance()`.
-- **States do not own timing logic** : use `TimeManager::GetTime()` and `GetDeltaTime()` rather than `millis()` directly, so timing stays consistent with the rest of the system.
-- **`begin()` is a no-op on RP2040 for NeoPixels** : the PIO state machine starts on the first `show()` call. Always call `show()` during `Begin()` to initialize the PIO before the state machine starts.
-- **Audio trigger pins must be HIGH on boot** : the Sound FX Mini treats a floating LOW as a trigger. `pinMode` + `digitalWrite HIGH` for all trigger pins are the very first lines of `setup()` for this reason.
-- **Ring 2 is powered at 3.3V** : the Pico's 3.3V data line is marginal against a 5V-powered WS2812B (threshold is 3.5V). Running Ring 2 from the 3.3V rail drops the threshold to ~2.3V and makes data reliable without a level shifter.
-- **UV MOSFET** : uses an N-channel MOSFET (RFP30N06LE). HIGH = on. 12V supply on the drain side is within the 60V rating. The Pico's 3.3V gate drive is marginal for full enhancement on this device : if UV brightness seems weak, a logic-level MOSFET (e.g. IRLZ44N) is a drop-in improvement.
+- **All hardware controllers are singletons.** Never instantiate them directly — always use `::Instance()`.
+- **States use `TimeManager`, not `millis()` directly.** This keeps timing consistent with delta time used for smooth ramps.
+- **Two separate distance averages exist for a reason.** The 4-sample fast average keeps hand detection snappy in Idle. The 60-sample slow average prevents a brief sensor glitch or momentary obstruction from falsely triggering an exit during the presentation.
+- **Calibration is for exit detection only.** It has no effect on the 30 cm hand trigger in IdleState.
+- **Simple Mode (DIP switch 0) bypasses calibration entirely.** Introduction, Presentation, and ExitRoom all use a fixed 50 cm threshold when Simple Mode is active. Use this when room geometry makes calibration unreliable.
+- **Audio trigger pins must be HIGH on boot.** The Sound FX board treats a floating LOW as a trigger. All trigger pins are set HIGH as the very first lines of `setup()`.
+- **The reset button is dual-purpose.** Short press (< 1s) enters CalibrationState. Long press (≥ 1s) calls `ResetToIdle()`. The distinction is handled in `loop()` by tracking press duration on release.
+- **UV MOSFET is N-channel: HIGH = on.** The Pico's 3.3V gate drive is marginal for full enhancement on some devices. If UV brightness seems weak, swap to a logic-level MOSFET (e.g. IRLZ44N).

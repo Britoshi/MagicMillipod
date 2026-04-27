@@ -34,6 +34,10 @@ void DistanceSensorManager::Tick()
     _bufferIndex = (_bufferIndex + 1) % BUFFER_SIZE;
     if (_bufferCount < BUFFER_SIZE) _bufferCount++;
 
+    _longBuffer[_longBufferIndex] = distance;
+    _longBufferIndex = (_longBufferIndex + 1) % LONG_BUFFER_SIZE;
+    if (_longBufferCount < LONG_BUFFER_SIZE) _longBufferCount++;
+
     Serial.print("[Distance] ");
     Serial.print(distance);
     Serial.println(" cm");
@@ -45,4 +49,12 @@ float DistanceSensorManager::GetAverageDistance() const
     float sum = 0.0f;
     for (int i = 0; i < _bufferCount; i++) sum += _buffer[i];
     return sum / _bufferCount;
+}
+
+float DistanceSensorManager::GetLongAverageDistance() const
+{
+    if (_longBufferCount == 0) return 0.0f;
+    float sum = 0.0f;
+    for (int i = 0; i < _longBufferCount; i++) sum += _longBuffer[i];
+    return sum / _longBufferCount;
 }

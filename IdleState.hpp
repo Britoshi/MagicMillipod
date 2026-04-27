@@ -18,8 +18,5 @@ protected:
     void InitializeSubState() override;
 
 private:
-    static constexpr double CLEAR_DURATION = 5.0;
-
-    bool   _primed         = true;
-    double _clearStartTime = -1.0;
+    static constexpr float TRIGGER_DISTANCE_CM = 30.0f;
 };

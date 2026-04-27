@@ -4,6 +4,7 @@
 #include "DistanceSensorManager.hpp"
 #include "NeoPixelController.hpp"
 #include "UVLightController.hpp"
+#include "SwitchController.hpp"
 #include "Time.hpp"
 
 void ExitRoomState::OnStateEnter()
@@ -24,12 +25,16 @@ void ExitRoomState::OnStateUpdate() {}
 
 bool ExitRoomState::CheckSwitchState()
 {
-    double elapsed   = TimeManager::Instance().GetTime() - _enterTime;
-    float  dist      = DistanceSensorManager::Instance().GetAverageDistance();
-    bool   personLeft = CalibrationData::Instance().HasPersonLeft(dist);
+    double elapsed = TimeManager::Instance().GetTime() - _enterTime;
 
-    if (personLeft || elapsed >= DURATION)
+    float dist = DistanceSensorManager::Instance().GetAverageDistance();
+    bool  personLeft = Switches.IsOn(0)
+        ? dist >= SIMPLE_EXIT_DISTANCE_CM
+        : CalibrationData::Instance().HasPersonLeft(dist);
+
+    if (elapsed >= DURATION && personLeft)
         return SwitchState(&context->factory.idleState);
+
     return false;
 }
 

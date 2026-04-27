@@ -43,8 +43,6 @@ The following sections describe how each component connects to the control box. 
 
 The control box is powered by a single 5V DC power supply connected to the **VSYS** pin on the microcontroller. The amplifier board requires a separate higher-voltage supply (12V–24V DC) connected directly to its power input terminals. **Do not swap the two power supplies.** Connecting the wrong voltage to either board will cause permanent damage.
 
-![Input Panel & Sensor Box](images/Millipod Input Panel + Sensor Box.png)
-
 ---
 
 #### Part B — Distance Sensor
@@ -58,9 +56,17 @@ The HC-SR04 ultrasonic distance sensor has four pins:
 | TRIG | Control box — GP12 |
 | ECHO | Control box — GP13 |
 
+The sensor box also houses an indicator LED ring which provides visual feedback about the system state. It connects to the control box on **GP16**.
+
+| Sensor Box LED | Connects To |
+|---|---|
+| Power (5V) | 5V power |
+| GND | Ground |
+| Data | Control box — GP16 |
+
 Mount the sensor so its face points toward the exhibit entrance at approximately chest height. Ensure no permanent objects are within the sensor's direct line of sight.
 
-![Input Panel & Sensor Box](images/Millipod Input Panel + Sensor Box.png)
+![Input Panel & Sensor Box](<images/Millipod Input Panel + Sensor Box.png>)
 
 ---
 
@@ -86,27 +92,20 @@ Audio flows through three components in sequence: **Sound Board → Amplifier �
 | Input L / Input R | Sound board audio output |
 | Speaker Out + / − | Speaker terminals + / − |
 
-![Audio Connection Guide](images/Millipod Audio Connection Guide.png)
+![Audio Connection Guide](<images/Millipod Audio Connection Guide.png>)
 
 ---
 
-#### Part D — LED Rings
+#### Part D — LED Rings & UV Light
 
-Three NeoPixel LED rings are connected in a chain. Each ring has three wires: power (5V), ground, and data.
+Two NeoPixel LED rings are mounted on the main exhibit. Each ring has three wires: power (5V), ground, and data.
 
-| Ring | Data Pin on Control Box |
-|---|---|
-| Ring 1 | GP18 |
-| Ring 2 | GP19 |
-| Ring 3 | GP16 |
+| Ring | Position | Data Pin on Control Box |
+|---|---|---|
+| Ring 1 | Front | GP18 |
+| Ring 2 | Back | GP19 |
 
-All rings share the same 5V and GND lines. The data line for each ring connects directly to the control box — they are **not** daisy-chained to each other.
-
-![UV Light & LED Rings](images/Millipod UV Light + LED.png)
-
----
-
-#### Part E — UV Light
+Both rings share the same 5V and GND lines. The data line for each ring connects directly to the control box — they are **not** daisy-chained to each other.
 
 The UV light is controlled through a MOSFET (a transistor that acts as an electronic switch). The control box sends a signal to the MOSFET, which switches the UV light on and off.
 
@@ -119,7 +118,7 @@ The UV light is controlled through a MOSFET (a transistor that acts as an electr
 
 > ⚠️ **Power off the system before handling UV light wiring.**
 
-![UV Light & LED Rings](images/Millipod UV Light + LED.png)
+![UV Light & LED Rings](<images/Millipod UV Light + LED.png>)
 
 ---
 
@@ -135,7 +134,9 @@ The UV light is controlled through a MOSFET (a transistor that acts as an electr
 
 Each button and switch connects between its listed GPIO pin and any ground pin. No additional resistors are needed — the control board handles this internally.
 
-![Input Panel & Sensor Box](images/Millipod Input Panel + Sensor Box.png)
+![Input Panel & Sensor Box](<images/Millipod Input Panel + Sensor Box.png>)
+
+> *The diagram above shows the input panel wiring, including the Reset / Calibration Button and all four DIP switches.*
 
 ### 1.3 System States
 
@@ -178,7 +179,29 @@ Calibration teaches the system what the room looks like when it is **empty** —
 
 ### 2.3 DIP Switches
 
-The control box has four small numbered switches (1–4) that enable or disable specific features. Your engineering team will configure these prior to delivery. **Do not change DIP switch positions unless instructed to do so.**
+The control box has four small numbered switches (0–3) that enable or disable specific features.
+
+| Switch | Name | Function |
+|---|---|---|
+| 0 | Simple Mode | See below |
+| 1 | — | Reserved |
+| 2 | — | Reserved |
+| 3 | — | Reserved |
+
+#### Simple Mode (Switch 0)
+
+When Switch 0 is flipped **on**, the system enters Simple Mode. This is intended for venues where precise room-exit detection is not needed or calibration has not been performed.
+
+**What changes in Simple Mode:**
+
+- **Idle:** No change. The system still detects a visitor when a hand or person comes within 30 cm of the sensor.
+- **Exit Room:** Instead of using calibrated room data to determine if the visitor has left, the system waits for the sensor reading to exceed **50 cm**. Once 10 seconds have elapsed and the sensor reads above 50 cm, the system returns to Idle.
+
+**When to use Simple Mode:**
+- If calibration has not been performed.
+- If the exhibit space makes consistent calibration difficult (e.g., frequently changing layouts).
+
+**Do not change any other DIP switch positions unless instructed to do so by your engineering team.**
 
 ### 2.4 Resetting the System
 
@@ -203,12 +226,12 @@ If the system becomes unresponsive or needs to return to Idle immediately:
 
 > ### ⚠️ WARNING — ULTRAVIOLET (UV) LIGHT EXPOSURE
 >
-> This system uses UV light during the presentation. **Direct exposure to UV light can cause eye irritation and skin damage**, similar to sunburn, even during brief exposure.
+> This system activates UV light during the presentation. **Direct exposure to UV light can cause eye irritation and skin damage**, similar to sunburn, even during brief exposure.
 >
 > - **Do not look directly at the UV light** while it is active.
-> - Staff performing maintenance must **power the system off** before accessing the UV light or its housing.
 > - Visitors with known UV light sensitivities should be advised before entering.
 > - The UV light is only active during the **Presentation** state (red LEDs). It is fully off during all other states.
+> - For UV light maintenance, hardware replacement, or physical adjustments, contact the responsible engineering team member.
 
 ---
 
@@ -237,7 +260,7 @@ Performing the following tasks on schedule will maximize the lifespan of the exh
 |---|---|
 | Daily | Visual inspection of cables and LEDs |
 | Weekly | Clean sensor lens; test full presentation cycle |
-| Monthly | Inspect all cable connections; clean UV light housing |
+| Monthly | Inspect all cable connections |
 | As needed | Re-calibrate after any repositioning of equipment |
 
 ---
@@ -270,18 +293,16 @@ Performing the following tasks on schedule will maximize the lifespan of the exh
 
 ---
 
-### 4.4 Monthly — Connection Inspection & UV Housing Cleaning
+### 4.4 Monthly — Connection Inspection
 
-**Tools needed:** Soft dry cloth; Phillips-head screwdriver (if applicable)
+**Tools needed:** None
 
 **Steps:**
 1. Power off and unplug the system.
-2. Without opening the control box, check that all external cables are firmly seated in their connectors. Gently press each connector to confirm it is fully inserted.
-3. Using a dry cloth, carefully wipe down the outside of the UV light housing to remove any dust buildup. **Do not use liquid cleaners.**
-4. Visually inspect the UV light for any visible cracks or discoloration of the light surface.
-5. Reconnect power and confirm normal operation.
+2. Check that all external cables are firmly seated in their connectors. Gently press each connector to confirm it is fully inserted.
+3. Reconnect power and confirm normal operation.
 
-**Success criteria:** All connectors firmly seated; UV housing clean and undamaged; system powers to blue Idle state.
+**Success criteria:** All connectors firmly seated; system powers to blue Idle state.
 
 ---
 
@@ -376,17 +397,26 @@ Performing the following tasks on schedule will maximize the lifespan of the exh
 
 ### FAQ
 
-**Q: How often does the system need to be re-calibrated?**
-A: Only when the equipment has been physically moved or rearranged. In a stable installation, a single calibration will last indefinitely.
+**Q: What is calibration actually for?**
+A: Calibration teaches the system what the room looks like when it is empty — specifically, the distance to the far wall or door with no one present. This is used after the presentation finishes to detect whether the visitor has left the room before resetting. It has nothing to do with triggering the presentation itself.
 
-**Q: Can the presentation be stopped mid-way if a visitor needs to leave?**
-A: Yes. Press and hold the Reset / Calibration Button for 1 second to immediately return the system to Idle.
+**Q: What triggers the presentation to start?**
+A: The distance sensor mounted on the exhibit detects when a hand or person comes within 30 cm. This is fixed and does not require calibration.
 
-**Q: What happens if a second visitor enters during the presentation?**
-A: The system will continue the current presentation. It will not restart until the full cycle is complete and it returns to Idle.
+**Q: What happens if a visitor leaves the room before the presentation finishes?**
+A: The presentation will continue playing to completion. Once it ends and the system enters the Exit Room phase, it will check whether the visitor has left (using calibration data or Simple Mode threshold) before resetting to Idle.
+
+**Q: What if calibration has never been performed?**
+A: Enable Simple Mode (DIP Switch 0). The system will use a fixed 50 cm threshold to determine if the room is empty instead of relying on calibration data.
+
+**Q: Does calibration need to be repeated often?**
+A: Only if the exhibit space is physically rearranged or equipment is moved. In a stable installation, a single calibration lasts indefinitely.
+
+**Q: Can the presentation be stopped immediately?**
+A: Yes. Press and hold the Reset / Calibration Button for at least 1 second to return the system to Idle at any time.
 
 **Q: Is it safe to leave the system running overnight?**
-A: Yes. The system is designed for continuous operation. The UV light only activates when a visitor is present and automatically turns off afterward.
+A: Yes. The system is designed for continuous operation. The UV light only activates when a visitor is present and turns off automatically afterward.
 
 ---
 

@@ -3,6 +3,9 @@
 #include "AdafruitAudio.hpp"
 #include "NeoPixelController.hpp"
 #include "UVLightController.hpp"
+#include "CalibrationData.hpp"
+#include "DistanceSensorManager.hpp"
+#include "SwitchController.hpp"
 #include "Time.hpp"
 
 void PresentationState::OnStateEnter()
@@ -44,8 +47,17 @@ void PresentationState::OnStateUpdate()
 
 bool PresentationState::CheckSwitchState()
 {
+    float dist      = DistanceSensorManager::Instance().GetLongAverageDistance();
+    bool  personLeft = Switches.IsOn(0)
+        ? dist >= SIMPLE_EXIT_DISTANCE_CM
+        : CalibrationData::Instance().HasPersonLeft(dist);
+
+    if (personLeft)
+        return SwitchState(&context->factory.idleState);
+
     if (TimeManager::Instance().GetTime() - _enterTime >= DURATION)
         return SwitchState(&context->factory.exitRoomState);
+
     return false;
 }
 
