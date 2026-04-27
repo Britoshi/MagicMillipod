@@ -14,7 +14,9 @@
 #define NEOPIXEL3_PIN      16
 #define RESET_BUTTON       15
 
-StateMachine *stateMachine = nullptr;
+StateMachine *stateMachine    = nullptr;
+static bool     _btnWasPressed = false;
+static uint32_t _btnPressTime  = 0;
 
 void setup()
 {
@@ -39,10 +41,20 @@ void loop()
     Time.Update(millis());
     DistanceSensorManager::Instance().Update();
 
-    if (digitalRead(RESET_BUTTON) == LOW)
+    bool btnDown = digitalRead(RESET_BUTTON) == LOW;
+    if (btnDown && !_btnWasPressed)
     {
-        stateMachine->ResetToIdle();
-        delay(300);
+        _btnPressTime  = millis();
+        _btnWasPressed = true;
+    }
+    else if (!btnDown && _btnWasPressed)
+    {
+        uint32_t held = millis() - _btnPressTime;
+        if (held >= 1000)
+            stateMachine->ResetToIdle();
+        else
+            stateMachine->EnterCalibration();
+        _btnWasPressed = false;
     }
 
     stateMachine->Update();

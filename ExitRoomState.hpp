@@ -1,25 +1,21 @@
 #pragma once
 #include "State.hpp"
 
-class IdleState : public State
-{
+class ExitRoomState : public State {
 public:
-    explicit IdleState(StateMachine *context, State *superState = nullptr)
+    explicit ExitRoomState(StateMachine *context, State *superState = nullptr)
         : State(context, superState) {}
 
-    ~IdleState() = default;
+    ~ExitRoomState() = default;
 
 protected:
     void OnStateEnter() override;
     void OnStateExit() override;
     void OnStateUpdate() override;
-
     bool CheckSwitchState() override;
     void InitializeSubState() override;
 
 private:
-    static constexpr double CLEAR_DURATION = 5.0;
-
-    bool   _primed         = true;
-    double _clearStartTime = -1.0;
+    static constexpr double DURATION = 10.0;
+    double _enterTime = 0.0;
 };

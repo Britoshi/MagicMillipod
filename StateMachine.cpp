@@ -21,3 +21,10 @@ void StateMachine::ResetToIdle()
     currentState = &factory.idleState;
     currentState->Enter();
 }
+
+void StateMachine::EnterCalibration()
+{
+    currentState->Exit();
+    currentState = &factory.calibrationState;
+    currentState->Enter();
+}

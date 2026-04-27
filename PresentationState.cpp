@@ -45,7 +45,7 @@ void PresentationState::OnStateUpdate()
 bool PresentationState::CheckSwitchState()
 {
     if (TimeManager::Instance().GetTime() - _enterTime >= DURATION)
-        return SwitchState(&context->factory.idleState);
+        return SwitchState(&context->factory.exitRoomState);
     return false;
 }
 

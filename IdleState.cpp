@@ -1,25 +1,25 @@
 #include "IdleState.hpp"
 #include "StateMachine.hpp"
+#include "CalibrationData.hpp"
 #include "DistanceSensorManager.hpp"
 #include "NeoPixelController.hpp"
 #include "UVLightController.hpp"
 #include "Time.hpp"
-
-#define SENSOR_INDICATOR 16
 
 void IdleState::OnStateEnter()
 {
     Serial.println("[Idle] Entered");
     NeoPixels.SetAll(0, 0, 255);
     UVLight.SetBrightness(0.0f);
-    digitalWrite(SENSOR_INDICATOR, HIGH);
 
-    bool alreadyTriggered = DistanceSensorManager::Instance().GetAverageDistance() < TRIGGER_DISTANCE_CM;
+    bool alreadyTriggered = CalibrationData::Instance().IsPersonPresent(
+        DistanceSensorManager::Instance().GetAverageDistance());
+
     if (alreadyTriggered)
     {
         _primed         = false;
         _clearStartTime = -1.0;
-        Serial.println("[Idle] Sensor suppressed on enter : waiting for clear");
+        Serial.println("[Idle] Sensor suppressed on enter: waiting for clear");
     }
     else
     {
@@ -31,7 +31,6 @@ void IdleState::OnStateExit()
 {
     Serial.println("[Idle] Exited");
     NeoPixels.Ring2Off();
-    digitalWrite(SENSOR_INDICATOR, LOW);
 }
 
 void IdleState::OnStateUpdate()
@@ -40,8 +39,9 @@ void IdleState::OnStateUpdate()
 
     if (!_primed)
     {
-        double now = TimeManager::Instance().GetTime();
-        bool clear = DistanceSensorManager::Instance().GetAverageDistance() >= TRIGGER_DISTANCE_CM;
+        double now  = TimeManager::Instance().GetTime();
+        float  dist = DistanceSensorManager::Instance().GetAverageDistance();
+        bool   clear = !CalibrationData::Instance().IsPersonPresent(dist);
 
         if (clear)
         {
@@ -62,7 +62,8 @@ void IdleState::OnStateUpdate()
 bool IdleState::CheckSwitchState()
 {
     if (!_primed) return false;
-    if (DistanceSensorManager::Instance().GetAverageDistance() < TRIGGER_DISTANCE_CM)
+    float dist = DistanceSensorManager::Instance().GetAverageDistance();
+    if (CalibrationData::Instance().IsPersonPresent(dist))
         return SwitchState(&context->factory.introductionState);
     return false;
 }
