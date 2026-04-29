@@ -4,18 +4,22 @@
 #include "NeoPixelController.hpp"
 #include "UVLightController.hpp"
 #include "Time.hpp"
+#include "AdafruitAudio.hpp"
 
 void IdleState::OnStateEnter()
 {
     Serial.println("[Idle] Entered");
     NeoPixels.SetAll(0, 0, 255);
+    NeoPixels.Ring3SetAll(255, 255, 255);
     UVLight.SetBrightness(0.0f);
+    AdafruitAudio::Instance().Reset();
 }
 
 void IdleState::OnStateExit()
 {
     Serial.println("[Idle] Exited");
     NeoPixels.Ring2Off();
+    NeoPixels.Ring3Off();
 }
 
 void IdleState::OnStateUpdate()

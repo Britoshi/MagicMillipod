@@ -1,4 +1,5 @@
 #pragma once
+#include "SwitchController.hpp"
 
 class CalibrationData {
 public:
@@ -14,7 +15,7 @@ public:
 
     bool IsPersonPresent(float distance) const
     {
-        if (!isCalibrated) return distance < FALLBACK_DISTANCE_CM;
+        if(Switches.IsOn(0) || !isCalibrated) return distance < FALLBACK_DISTANCE_CM;
         return distance < (doorDistance - 1.5f * errorRange);
     }
 
@@ -25,5 +26,5 @@ public:
 
 private:
     CalibrationData() = default;
-    static constexpr float FALLBACK_DISTANCE_CM = 30.0f;
+    static constexpr float FALLBACK_DISTANCE_CM = 60.0f;
 };

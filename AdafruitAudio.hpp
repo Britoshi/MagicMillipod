@@ -14,11 +14,12 @@ public:
     AdafruitAudio(const AdafruitAudio &) = delete;
     AdafruitAudio &operator=(const AdafruitAudio &) = delete;
 
-    void Begin(uint8_t triggerPin0, uint8_t triggerPin1, uint8_t resetPin)
+    void Begin(uint8_t triggerPin0, uint8_t triggerPin1, uint8_t triggerPin2, uint8_t resetPin)
     {
         _triggerPins[0] = triggerPin0;
         _triggerPins[1] = triggerPin1;
-        for (int i = 0; i < 2; i++)
+        _triggerPins[2] = triggerPin2;
+        for (int i = 0; i < 3; i++)
         {
             pinMode(_triggerPins[i], OUTPUT);
             digitalWrite(_triggerPins[i], HIGH);
@@ -38,7 +39,7 @@ public:
 
     void PlayTrack(uint8_t index)
     {
-        if (index > 1) return;
+        if (index > 2) return;
         Serial.print("[Audio] Playing track "); Serial.println(index);
         digitalWrite(_triggerPins[index], LOW);
         delay(200);
@@ -56,7 +57,7 @@ public:
 
 private:
     AdafruitAudio() = default;
-    uint8_t _triggerPins[2] = { 0, 0 };
+    uint8_t _triggerPins[3] = { 0, 0, 0 };
     uint8_t _resetPin = 0;
 };
 

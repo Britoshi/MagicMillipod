@@ -4,7 +4,7 @@
 #include "Time.hpp"
 
 class DistanceSensorManager {
-    const double TICK_RATE = 20;
+    const double TICK_RATE = 4;
     void Tick();
 
 public:
@@ -19,7 +19,8 @@ public:
 
     float duration = 0.0;
     float distance = 0.0;
-    double lastTickTime = 0.0;
+    // double lastTickTime = 0.0;
+    float timer = 0.0;
 
     void Start();
     void Update();
@@ -30,7 +31,7 @@ private:
     DistanceSensorManager() = default;
 
     static const int BUFFER_SIZE      = 4;
-    static const int LONG_BUFFER_SIZE = 60; // 3s at 20Hz
+    static const int LONG_BUFFER_SIZE = 12; // 3s at 4Hz
 
     float _buffer[BUFFER_SIZE]           = {};
     int   _bufferIndex                   = 0;

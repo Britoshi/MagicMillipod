@@ -6,9 +6,12 @@ class StateMachine;
 class State
 {
 protected:
-    StateMachine *context = nullptr; 
-    State *superState = nullptr;     
-    State *subState = nullptr;       
+    StateMachine *context = nullptr;
+    State *superState = nullptr;
+    State *subState = nullptr;
+    double _lastCheckTime = 0.0;
+
+    static constexpr double CHECK_INTERVAL = 0.25; // 4 Hz
 
 protected:
     bool SwitchState(State *state);

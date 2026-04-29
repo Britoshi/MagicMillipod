@@ -11,18 +11,20 @@
 void PresentationState::OnStateEnter()
 {
     Serial.println("[Presentation] Entered");
-    _enterTime    = TimeManager::Instance().GetTime();
-    _uvBrightness = 0.0f;
+    _enterTime      = TimeManager::Instance().GetTime();
+    _uvBrightness   = 0.0f;
+    _personLeftTime = -1.0;
+    _personSeen     = false;
     NeoPixels.SetAll(255, 0, 0);
     NeoPixels.Ring2Off();
+    NeoPixels.Ring3Off();
     UVLight.SetBrightness(0.0f);
     AdafruitAudio::Instance().PlayTrack(1);
 }
 
 void PresentationState::OnStateExit()
 {
-    Serial.println("[Presentation] Exited");
-    AdafruitAudio::Instance().Reset();
+    Serial.println("[Presentation] Exited"); 
     UVLight.SetBrightness(0.0f);
 }
 
@@ -47,15 +49,27 @@ void PresentationState::OnStateUpdate()
 
 bool PresentationState::CheckSwitchState()
 {
-    float dist      = DistanceSensorManager::Instance().GetLongAverageDistance();
-    bool  personLeft = Switches.IsOn(0)
-        ? dist >= SIMPLE_EXIT_DISTANCE_CM
-        : CalibrationData::Instance().HasPersonLeft(dist);
+    float dist = DistanceSensorManager::Instance().GetAverageDistance();
+    bool personLeft = CalibrationData::Instance().HasPersonLeft(dist);
 
-    if (personLeft)
-        return SwitchState(&context->factory.idleState);
+    double now = TimeManager::Instance().GetTime();
+    if (!personLeft) _personSeen = true;
 
-    if (TimeManager::Instance().GetTime() - _enterTime >= DURATION)
+    if (_personSeen)
+    {
+        if (personLeft)
+        {
+            if (_personLeftTime < 0.0) _personLeftTime = now;
+            if (now - _personLeftTime >= 10.0)
+                return SwitchState(&context->factory.idleState);
+        }
+        else
+        {
+            _personLeftTime = -1.0;
+        }
+    }
+
+    if (now - _enterTime >= DURATION)
         return SwitchState(&context->factory.exitRoomState);
 
     return false;

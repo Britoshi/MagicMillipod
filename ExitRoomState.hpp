@@ -16,7 +16,8 @@ protected:
     void InitializeSubState() override;
 
 private:
-    static constexpr double DURATION               = 10.0;
-    static constexpr float  SIMPLE_EXIT_DISTANCE_CM = 50.0f;
-    double _enterTime = 0.0;
+    static constexpr double DURATION        = 10.0;
+    static constexpr double REPEAT_INTERVAL = 10.0;
+    double _enterTime      = 0.0;
+    double _lastRepeatTime = 0.0;
 };

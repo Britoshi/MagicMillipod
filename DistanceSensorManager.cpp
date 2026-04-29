@@ -12,11 +12,11 @@ void DistanceSensorManager::Start()
 
 void DistanceSensorManager::Update()
 {
-    double now = TimeManager::Instance().GetTime();
-    if (now - lastTickTime >= (1.0 / TICK_RATE))
+    timer += TimeManager::Instance().GetDeltaTime();
+    if (timer >= (1.0 / TICK_RATE))
     {
+        timer = 0.0;
         Tick();
-        lastTickTime = now;
     }
 }
 
@@ -30,16 +30,19 @@ void DistanceSensorManager::Tick()
     duration = pulseIn(ECHO_PIN, HIGH);
     distance = (duration * 0.0343f) / 2.0f;
 
-    _buffer[_bufferIndex] = distance;
-    _bufferIndex = (_bufferIndex + 1) % BUFFER_SIZE;
-    if (_bufferCount < BUFFER_SIZE) _bufferCount++;
+    if (distance <= 200.0f)
+    {
+        _buffer[_bufferIndex] = distance;
+        _bufferIndex = (_bufferIndex + 1) % BUFFER_SIZE;
+        if (_bufferCount < BUFFER_SIZE) _bufferCount++;
 
-    _longBuffer[_longBufferIndex] = distance;
-    _longBufferIndex = (_longBufferIndex + 1) % LONG_BUFFER_SIZE;
-    if (_longBufferCount < LONG_BUFFER_SIZE) _longBufferCount++;
+        _longBuffer[_longBufferIndex] = distance;
+        _longBufferIndex = (_longBufferIndex + 1) % LONG_BUFFER_SIZE;
+        if (_longBufferCount < LONG_BUFFER_SIZE) _longBufferCount++;
+    }
 
     Serial.print("[Distance] ");
-    Serial.print(distance);
+    Serial.print(GetAverageDistance());
     Serial.println(" cm");
 }
 

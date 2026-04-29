@@ -11,9 +11,12 @@
 void IntroductionState::OnStateEnter()
 {
     Serial.println("[Introduction] Entered");
-    _enterTime = TimeManager::Instance().GetTime();
+    _enterTime      = TimeManager::Instance().GetTime();
+    _personLeftTime = -1.0;
+    _personSeen     = false;
     NeoPixels.SetAll(255, 0, 0);
     NeoPixels.Ring2Rainbow();
+    NeoPixels.Ring3Off();
     UVLight.SetBrightness(0.0f);
     AdafruitAudio::Instance().PlayTrack(0);
 }
@@ -21,7 +24,6 @@ void IntroductionState::OnStateEnter()
 void IntroductionState::OnStateExit()
 {
     Serial.println("[Introduction] Exited");
-    AdafruitAudio::Instance().Reset();
 }
 
 void IntroductionState::OnStateUpdate()
@@ -30,23 +32,37 @@ void IntroductionState::OnStateUpdate()
     double remaining = DURATION - elapsed;
 
     float fadeProgress = (float)((remaining - FADE_OFFSET) / FADE_DURATION);
-    if (fadeProgress > 1.0f) fadeProgress = 1.0f;
-    if (fadeProgress < 0.0f) fadeProgress = 0.0f;
+    if (fadeProgress > 1.0f)
+        fadeProgress = 1.0f;
+    if (fadeProgress < 0.0f)
+        fadeProgress = 0.0f;
 
     NeoPixels.Ring2Rainbow(fadeProgress);
 }
 
 bool IntroductionState::CheckSwitchState()
 {
-    float dist      = DistanceSensorManager::Instance().GetLongAverageDistance();
-    bool  personLeft = Switches.IsOn(0)
-        ? dist >= SIMPLE_EXIT_DISTANCE_CM
-        : CalibrationData::Instance().HasPersonLeft(dist);
+    float dist = DistanceSensorManager::Instance().GetAverageDistance();
+    bool personLeft = CalibrationData::Instance().HasPersonLeft(dist);
 
-    if (personLeft)
-        return SwitchState(&context->factory.idleState);
+    double now = TimeManager::Instance().GetTime();
+    if (!personLeft) _personSeen = true;
 
-    if (TimeManager::Instance().GetTime() - _enterTime >= DURATION)
+    if (_personSeen)
+    {
+        if (personLeft)
+        {
+            if (_personLeftTime < 0.0) _personLeftTime = now;
+            if (now - _personLeftTime >= 10.0)
+                return SwitchState(&context->factory.idleState);
+        }
+        else
+        {
+            _personLeftTime = -1.0;
+        }
+    }
+
+    if (now - _enterTime >= DURATION)
         return SwitchState(&context->factory.presentationState);
 
     return false;

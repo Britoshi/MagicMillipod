@@ -1,5 +1,6 @@
 #include "State.hpp"
-#include "StateMachine.hpp"  
+#include "StateMachine.hpp"
+#include "Time.hpp"
 
 bool State::SwitchState(State *state)
 {
@@ -43,8 +44,13 @@ void State::Exit()
 
 void State::Update()
 {
-    if (CheckSwitchState())
-        return;
+    double now = TimeManager::Instance().GetTime();
+    if (now - _lastCheckTime >= CHECK_INTERVAL)
+    {
+        _lastCheckTime = now;
+        if (CheckSwitchState())
+            return;
+    }
     OnStateUpdate();
 
     if (subState != nullptr)

@@ -20,9 +20,9 @@ public:
 
     void Begin()
     {
-        _ring1.begin(); _ring1.setBrightness(255);
-        _ring2.begin(); _ring2.setBrightness(255);
-        _ring3.begin(); _ring3.setBrightness(255);
+        _ring1.begin(); _ring1.setBrightness(80);
+        _ring2.begin(); _ring2.setBrightness(80);
+        _ring3.begin(); _ring3.setBrightness(80);
         delay(200);
         _ring1.clear(); _ring1.show();
         _ring2.clear(); _ring2.show();
