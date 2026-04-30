@@ -8,6 +8,11 @@ void DistanceSensorManager::Start()
 {
     pinMode(TRIG_PIN, OUTPUT);
     pinMode(ECHO_PIN, INPUT);
+
+    for (int i = 0; i < BUFFER_SIZE; i++)      _buffer[i]     = 200.0f;
+    for (int i = 0; i < LONG_BUFFER_SIZE; i++) _longBuffer[i] = 200.0f;
+    _bufferCount     = BUFFER_SIZE;
+    _longBufferCount = LONG_BUFFER_SIZE;
 }
 
 void DistanceSensorManager::Update()
@@ -30,16 +35,17 @@ void DistanceSensorManager::Tick()
     duration = pulseIn(ECHO_PIN, HIGH);
     distance = (duration * 0.0343f) / 2.0f;
 
-    if (distance <= 200.0f)
-    {
-        _buffer[_bufferIndex] = distance;
-        _bufferIndex = (_bufferIndex + 1) % BUFFER_SIZE;
-        if (_bufferCount < BUFFER_SIZE) _bufferCount++;
+    if (distance < 2.0f) return;  // no echo / timeout, keep buffer as-is
 
-        _longBuffer[_longBufferIndex] = distance;
-        _longBufferIndex = (_longBufferIndex + 1) % LONG_BUFFER_SIZE;
-        if (_longBufferCount < LONG_BUFFER_SIZE) _longBufferCount++;
-    }
+    float sample = (distance > 200.0f) ? 100.0f : distance;
+
+    _buffer[_bufferIndex] = sample;
+    _bufferIndex = (_bufferIndex + 1) % BUFFER_SIZE;
+    if (_bufferCount < BUFFER_SIZE) _bufferCount++;
+
+    _longBuffer[_longBufferIndex] = sample;
+    _longBufferIndex = (_longBufferIndex + 1) % LONG_BUFFER_SIZE;
+    if (_longBufferCount < LONG_BUFFER_SIZE) _longBufferCount++;
 
     Serial.print("[Distance] ");
     Serial.print(GetAverageDistance());

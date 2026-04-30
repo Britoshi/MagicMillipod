@@ -43,6 +43,14 @@ public:
         _ring1.show();
     }
 
+    void Ring1Fade(uint8_t r, uint8_t g, uint8_t b, float t)
+    {
+        t = constrain(t, 0.0f, 1.0f);
+        for (int i = 0; i < NEOPIXEL_COUNT; i++)
+            _ring1.setPixelColor(i, _ring1.Color((uint8_t)(r*t), (uint8_t)(g*t), (uint8_t)(b*t)));
+        _ring1.show();
+    }
+
     void Off()
     {
         _ring1.clear();
@@ -69,6 +77,14 @@ public:
         }
     }
 
+    void Ring2Fade(uint8_t r, uint8_t g, uint8_t b, float t)
+    {
+        t = constrain(t, 0.0f, 1.0f);
+        for (int i = 0; i < NEOPIXEL_COUNT; i++)
+            _ring2.setPixelColor(i, _ring2.Color((uint8_t)(r*t), (uint8_t)(g*t), (uint8_t)(b*t)));
+        _ring2.show();
+    }
+
     void Ring2Off()
     {
         _ring2.clear();
@@ -79,6 +95,14 @@ public:
     {
         for (int i = 0; i < NEOPIXEL_COUNT; i++)
             _ring3.setPixelColor(i, _ring3.Color(r, g, b));
+        _ring3.show();
+    }
+
+    void Ring3Fade(uint8_t r, uint8_t g, uint8_t b, float t)
+    {
+        t = constrain(t, 0.0f, 1.0f);
+        for (int i = 0; i < NEOPIXEL_COUNT; i++)
+            _ring3.setPixelColor(i, _ring3.Color((uint8_t)(r*t), (uint8_t)(g*t), (uint8_t)(b*t)));
         _ring3.show();
     }
 

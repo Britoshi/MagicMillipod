@@ -15,6 +15,7 @@ public:
     void Update();
     void ResetToIdle();
     void EnterCalibration();
+    void AdvanceToNextState();
 
 public:
     StateFactory factory;

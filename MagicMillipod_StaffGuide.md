@@ -30,7 +30,7 @@ The system requires no interaction from staff during normal operation. Staff inv
 | LED Rings (×3) | Colored light rings that change color to indicate system state |
 | Sound Board | Plays the pre-loaded audio tracks for the presentation |
 | Speaker(s) | Outputs audio to the room |
-| Reset / Calibration Button | Used by staff for setup and reset (located on the control box) |
+| Reset / Calibration Button | Used by staff for setup, reset, and manual state advance (located on the control box) |
 | DIP Switches (×4) | Four small switches on the control box for configuration (see Section 2.3) |
 
 ### 1.2 Wiring Guide
@@ -81,6 +81,7 @@ Audio flows through three components in sequence: **Sound Board → Amplifier �
 | GND | Ground |
 | Trigger 0 | Control box — GP4 |
 | Trigger 1 | Control box — GP2 |
+| Trigger 2 | Control box — GP3 |
 | Reset | Control box — GP5 |
 | Audio Out L/R | Amplifier input L/R |
 
@@ -102,8 +103,8 @@ Two NeoPixel LED rings are mounted on the main exhibit. Each ring has three wire
 
 | Ring | Position | Data Pin on Control Box |
 |---|---|---|
-| Ring 1 | Front | GP18 |
-| Ring 2 | Back | GP19 |
+| Ring 1 | Front / Outer | GP18 |
+| Ring 2 | Back / Interior | GP19 |
 
 Both rings share the same 5V and GND lines. The data line for each ring connects directly to the control box — they are **not** daisy-chained to each other.
 
@@ -147,7 +148,7 @@ The system moves through the following states automatically. The LED ring color 
 | **Idle** | Blue | Waiting for a visitor. System is ready. |
 | **Introduction** | Red + Rainbow | Visitor detected. Introduction audio playing. |
 | **Presentation** | Red | Main presentation audio and UV light active. |
-| **Exit Room** | Green | Presentation complete. Waiting for visitor to leave. |
+| **Exit Room** | Red (fading in) | Presentation complete. All lights gradually brighten. Waiting for visitor to leave. |
 | **Calibration** | Yellow | Staff calibration in progress (see Section 2.2). |
 
 ---
@@ -162,6 +163,8 @@ The system moves through the following states automatically. The LED ring color 
 4. Confirm the LED rings glow **blue**. This indicates the system is in Idle state and ready for visitors.
 5. The system will now operate automatically. No further action is required.
 
+> **Note:** Calibration data is saved automatically and survives power off. If the exhibit has been calibrated before, it does not need to be recalibrated after a normal power cycle — only after moving equipment.
+
 ### 2.2 Calibrating the Distance Sensor (Required Before First Use and After Moving Equipment)
 
 Calibration teaches the system what the room looks like when it is **empty** — specifically, how far away the far wall or door is. This allows the sensor to reliably detect when a visitor is present.
@@ -170,12 +173,15 @@ Calibration teaches the system what the room looks like when it is **empty** —
 
 **Steps:**
 1. Ensure the exhibit space is **completely empty** — no visitors, staff, or objects between the sensor and the far wall.
-2. Locate the **Reset / Calibration Button** on the control box.
-3. Press the button **briefly** (less than 1 second) and release it.
-4. The LED rings will turn **yellow**, indicating calibration is in progress.
-5. **Do not move anything** in the exhibit space for the next **10 seconds**.
-6. After 10 seconds, the LED rings will return to **blue** (Idle). Calibration is complete.
-7. Test by walking into the exhibit space — the presentation should begin automatically.
+2. Ensure the system is in **Idle state** (blue LEDs).
+3. Locate the **Reset / Calibration Button** on the control box.
+4. Press the button **briefly** (less than 1 second) and release it.
+5. The LED rings will turn **yellow**, indicating calibration is in progress.
+6. **Do not move anything** in the exhibit space for the next **10 seconds**.
+7. After 10 seconds, the LED rings will return to **blue** (Idle). Calibration is complete and automatically saved.
+8. Test by walking into the exhibit space — the presentation should begin automatically.
+
+> **Calibration is saved automatically.** It will be remembered the next time the system powers on. You only need to repeat calibration if the room layout or equipment position changes.
 
 ### 2.3 DIP Switches
 
@@ -184,9 +190,9 @@ The control box has four small numbered switches (0–3) that enable or disable 
 | Switch | Name | Function |
 |---|---|---|
 | 0 | Simple Mode | See below |
-| 1 | — | Reserved |
-| 2 | — | Reserved |
-| 3 | — | Reserved |
+| 1 | Skip Left-Room Check | See below |
+| 2 | — | Reserved — do not change |
+| 3 | — | Reserved — do not change |
 
 #### Simple Mode (Switch 0)
 
@@ -201,9 +207,30 @@ When Switch 0 is flipped **on**, the system enters Simple Mode. This is intended
 - If calibration has not been performed.
 - If the exhibit space makes consistent calibration difficult (e.g., frequently changing layouts).
 
-**Do not change any other DIP switch positions unless instructed to do so by your engineering team.**
+#### Skip Left-Room Check (Switch 1)
 
-### 2.4 Resetting the System
+When Switch 1 is flipped **on**, the Introduction and Presentation states will always run to their full duration, even if the visitor leaves the room early. The system will not reset to Idle mid-presentation.
+
+**When to use:**
+- If the sensor is causing unwanted early resets during the presentation.
+- For demonstrations or testing where you want the full sequence to play uninterrupted.
+
+**Do not change Switch 2 or Switch 3 — these are reserved for future use.**
+
+### 2.4 Manually Advancing the Presentation (Staff Use)
+
+The Reset / Calibration Button can be used to **skip forward** to the next stage of the presentation without waiting for it to finish naturally.
+
+| Button Action | System is in Idle | System is in any other state |
+|---|---|---|
+| **Short press** (< 1 second) | Enters Calibration | Skips to the next state |
+| **Long press** (≥ 1 second) | Returns to Idle | Returns to Idle |
+
+The skip order is: **Introduction → Presentation → Exit Room → Idle.**
+
+> **Note:** Skipping a state will stop the current audio track before moving on.
+
+### 2.5 Resetting the System
 
 If the system becomes unresponsive or needs to return to Idle immediately:
 
@@ -213,9 +240,13 @@ If the system becomes unresponsive or needs to return to Idle immediately:
 
 > **Note:** Resetting does not erase the calibration. You do not need to re-calibrate after a reset.
 
-### 2.5 Powering Down
+### 2.6 Visit Counter
 
-1. Allow the current presentation cycle to finish (LEDs return to blue), or perform a reset (Section 2.4).
+The system automatically counts how many times the Introduction state has been entered (i.e., how many visitor presentations have started). This count is saved to the control box and survives power cycles. It can be read via the serial monitor by your engineering team if needed.
+
+### 2.7 Powering Down
+
+1. Allow the current presentation cycle to finish (LEDs return to blue), or perform a reset (Section 2.5).
 2. Unplug the power cable from the wall outlet.
 
 ---
@@ -239,7 +270,7 @@ If the system becomes unresponsive or needs to return to Idle immediately:
 >
 > - **Do not open the control box** unless the power cable has been unplugged from the wall.
 > - **Do not expose the control box or any electronics to water or moisture.** The electronics are not waterproof.
-> - If you observe burning smells, visible sparring, or smoke, **immediately unplug the system** and do not attempt to restart it. Contact your engineering team.
+> - If you observe burning smells, visible sparking, or smoke, **immediately unplug the system** and do not attempt to restart it. Contact your engineering team.
 > - All power connections should use the cables provided. Do not substitute cables with different ratings.
 
 ---
@@ -287,7 +318,7 @@ Performing the following tasks on schedule will maximize the lifespan of the exh
 2. Gently wipe the front face of the distance sensor (the two silver cylinders) with a dry cloth to remove dust.
 3. Power the system back on and confirm blue LEDs.
 4. Walk into the exhibit space and verify the presentation begins (LEDs change from blue to red).
-5. Allow the presentation to complete, or reset the system (Section 2.4).
+5. Allow the presentation to complete, or reset the system (Section 2.5).
 
 **Success criteria:** Sensor lens is clean; presentation triggers when a person enters the space.
 
@@ -362,7 +393,7 @@ Performing the following tasks on schedule will maximize the lifespan of the exh
 **Steps to troubleshoot:**
 1. Check that the speaker cable is firmly connected to the control box and to the speaker.
 2. If the speaker has a volume knob, confirm it is turned up.
-3. Perform a system reset (Section 2.4) and test again.
+3. Perform a system reset (Section 2.5) and test again.
 4. If audio still does not play after reset, contact your engineering team — the sound board may need its audio files reloaded.
 
 ---
@@ -388,10 +419,22 @@ Performing the following tasks on schedule will maximize the lifespan of the exh
 **Root Cause:** The control board may have encountered an unexpected error.
 
 **Steps to troubleshoot:**
-1. Perform a reset by holding the Reset / Calibration Button for 1 second (Section 2.4).
+1. Perform a reset by holding the Reset / Calibration Button for 1 second (Section 2.5).
 2. If the LEDs return to blue, the system is working again. Re-calibrate if needed.
 3. If the reset button has no effect, power cycle the system: unplug, wait 15 seconds, plug back in.
 4. If the issue happens frequently, note the time and conditions and report to your engineering team.
+
+---
+
+### Issue 7: Presentation resets to Idle before finishing
+
+**Symptoms:** The presentation stops and LEDs return to blue before the full presentation has played.
+
+**Root Cause:** The sensor detected that the visitor left the room and reset the system early.
+
+**Steps to troubleshoot:**
+1. If this happens consistently, flip **DIP Switch 1** to the ON position. This disables the early-exit check so the presentation always runs to completion regardless of sensor readings.
+2. If the sensor is triggering incorrectly due to the room layout, contact your engineering team.
 
 ---
 
@@ -400,11 +443,14 @@ Performing the following tasks on schedule will maximize the lifespan of the exh
 **Q: What is calibration actually for?**
 A: Calibration teaches the system what the room looks like when it is empty — specifically, the distance to the far wall or door with no one present. This is used after the presentation finishes to detect whether the visitor has left the room before resetting. It has nothing to do with triggering the presentation itself.
 
+**Q: Do I need to recalibrate after turning the system off and on?**
+A: No. Calibration is saved automatically to the control box and survives power cycles. You only need to recalibrate if the exhibit is physically moved or rearranged.
+
 **Q: What triggers the presentation to start?**
 A: The distance sensor mounted on the exhibit detects when a hand or person comes within 30 cm. This is fixed and does not require calibration.
 
 **Q: What happens if a visitor leaves the room before the presentation finishes?**
-A: The presentation will continue playing to completion. Once it ends and the system enters the Exit Room phase, it will check whether the visitor has left (using calibration data or Simple Mode threshold) before resetting to Idle.
+A: By default, the system will detect this and reset to Idle. If you want the presentation to always run its full duration, flip DIP Switch 1 to ON (see Section 2.3).
 
 **Q: What if calibration has never been performed?**
 A: Enable Simple Mode (DIP Switch 0). The system will use a fixed 50 cm threshold to determine if the room is empty instead of relying on calibration data.
@@ -412,11 +458,14 @@ A: Enable Simple Mode (DIP Switch 0). The system will use a fixed 50 cm threshol
 **Q: Does calibration need to be repeated often?**
 A: Only if the exhibit space is physically rearranged or equipment is moved. In a stable installation, a single calibration lasts indefinitely.
 
-**Q: Can the presentation be stopped immediately?**
-A: Yes. Press and hold the Reset / Calibration Button for at least 1 second to return the system to Idle at any time.
+**Q: Can the presentation be skipped or stopped immediately?**
+A: Yes. While the presentation is running, a short press of the Reset / Calibration Button will skip to the next stage. A long press (hold for 1 second) will stop everything and return to Idle immediately.
 
 **Q: Is it safe to leave the system running overnight?**
 A: Yes. The system is designed for continuous operation. The UV light only activates when a visitor is present and turns off automatically afterward.
+
+**Q: Does the system track how many visitors have used the exhibit?**
+A: Yes. The system keeps a running count of how many presentations have been started. This count is saved automatically and survives power cycles. Contact your engineering team to retrieve the count.
 
 ---
 

@@ -48,6 +48,7 @@ bool CalibrationState::CheckSwitchState()
             cal.isCalibrated = true;
             Serial.print("[Calibration] Door: "); Serial.print(cal.doorDistance);
             Serial.print(" cm  Error: +-");      Serial.println(cal.errorRange);
+            cal.Save();
         }
         return SwitchState(&context->factory.idleState);
     }

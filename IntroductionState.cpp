@@ -7,10 +7,12 @@
 #include "SwitchController.hpp"
 #include "Time.hpp"
 #include "UVLightController.hpp"
+#include "VisitCounter.hpp"
 
 void IntroductionState::OnStateEnter()
 {
     Serial.println("[Introduction] Entered");
+    VisitCount.Increment();
     _enterTime      = TimeManager::Instance().GetTime();
     _personLeftTime = -1.0;
     _personSeen     = false;
@@ -42,23 +44,27 @@ void IntroductionState::OnStateUpdate()
 
 bool IntroductionState::CheckSwitchState()
 {
-    float dist = DistanceSensorManager::Instance().GetAverageDistance();
-    bool personLeft = CalibrationData::Instance().HasPersonLeft(dist);
-
     double now = TimeManager::Instance().GetTime();
-    if (!personLeft) _personSeen = true;
 
-    if (_personSeen)
+    if (!Switches.IsOn(1))
     {
-        if (personLeft)
+        float dist = DistanceSensorManager::Instance().GetAverageDistance();
+        bool personLeft = CalibrationData::Instance().HasPersonLeft(dist);
+
+        if (!personLeft) _personSeen = true;
+
+        if (_personSeen)
         {
-            if (_personLeftTime < 0.0) _personLeftTime = now;
-            if (now - _personLeftTime >= 10.0)
-                return SwitchState(&context->factory.idleState);
-        }
-        else
-        {
-            _personLeftTime = -1.0;
+            if (personLeft)
+            {
+                if (_personLeftTime < 0.0) _personLeftTime = now;
+                if (now - _personLeftTime >= 10.0)
+                    return SwitchState(&context->factory.idleState);
+            }
+            else
+            {
+                _personLeftTime = -1.0;
+            }
         }
     }
 

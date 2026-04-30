@@ -1,5 +1,7 @@
 #include "Time.hpp"
 #define Time TimeManager::Instance()
+#include "VisitCounter.hpp"
+#include "CalibrationData.hpp"
 #include "UVLightController.hpp"
 #include "NeoPixelController.hpp"
 #include "pico/multicore.h"
@@ -34,6 +36,8 @@ void setup()
     AdafruitAudio::Instance().Begin(SFX_TRIGGER_0, SFX_TRIGGER_1, SFX_TRIGGER_2, SFX_RESET);
     DistanceSensorManager::Instance().Start();
     NeoPixels.Begin();
+    VisitCount.Begin();
+    CalibrationData::Instance().Load();
     stateMachine = new StateMachine();
     delay(3000);
 }
@@ -54,8 +58,10 @@ void loop()
         uint32_t held = millis() - _btnPressTime;
         if (held >= 1000)
             stateMachine->ResetToIdle();
-        else
+        else if (stateMachine->currentState == &stateMachine->factory.idleState)
             stateMachine->EnterCalibration();
+        else
+            stateMachine->AdvanceToNextState();
         _btnWasPressed = false;
     }
 

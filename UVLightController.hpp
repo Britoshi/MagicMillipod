@@ -27,15 +27,19 @@ public:
     void SetBrightness(float brightness)
     {
         brightness = constrain(brightness, 0.0f, 1.0f);
-        // N-channel MOSFET: HIGH = on, LOW = off
         int duty = (int)(brightness * 255);
-        Serial.print("[UV] Brightness: ");
-        Serial.print(brightness);
-        Serial.print(" -> duty: ");
-        Serial.println(duty);
+        if (duty != _lastDuty)
+        {
+            Serial.print("[UV] Brightness: ");
+            Serial.print(brightness);
+            Serial.print(" -> duty: ");
+            Serial.println(duty);
+            _lastDuty = duty;
+        }
         analogWrite(UV_LIGHT_PIN, duty);
     }
 
 private:
     UVLightController() = default;
+    int _lastDuty = -1;
 };
